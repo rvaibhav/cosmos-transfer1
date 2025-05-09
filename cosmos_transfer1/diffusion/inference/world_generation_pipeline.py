@@ -443,8 +443,6 @@ class DiffusionControl2WorldGenerationPipeline(BaseWorldGenerationPipeline):
             num_video_frames=self.num_video_frames,
         )
 
-        log.info(f"VAIBHAV1: Regional contexts: {regional_contexts}")
-        log.info(f"VAIBHAV1: Regional contexts shape: {regional_contexts.shape}")
         if regional_contexts is not None:
             data_batch["regional_contexts"] = regional_contexts
             data_batch["region_masks"] = region_masks
