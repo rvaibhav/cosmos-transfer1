@@ -429,9 +429,11 @@ class GeneralDIT(nn.Module):
             if crossattn_mask:
                 crossattn_mask = rearrange(crossattn_mask, "B M -> M B")
 
+            # For regional contexts
             if regional_contexts is not None:
                 regional_contexts = rearrange(regional_contexts, "B R M D -> R M B D")
 
+            # For region masks (assuming 5D format)
             if region_masks is not None:
                 region_masks = rearrange(region_masks, "B R T H W -> R T H W B")
 
@@ -521,6 +523,7 @@ class GeneralDIT(nn.Module):
             inputs["regional_contexts"],
             inputs["region_masks"],
         )
+
         extra_pos_emb_B_T_H_W_D_or_T_H_W_B_D = inputs["extra_pos_emb_B_T_H_W_D_or_T_H_W_B_D"]
         if extra_pos_emb_B_T_H_W_D_or_T_H_W_B_D is not None:
             assert (

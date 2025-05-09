@@ -197,13 +197,14 @@ class VideoExtendGeneralDIT(GeneralDIT):
         crossattn_emb = rearrange(crossattn_emb, "B M D -> M B D")
         if crossattn_mask:
             crossattn_mask = rearrange(crossattn_mask, "B M -> M B")
-        
+
         # For regional contexts
         if regional_contexts is not None:
             regional_contexts = rearrange(regional_contexts, "B R M D -> R M B D")
 
         # For region masks (assuming 5D format)
         if region_masks is not None:
+            # if len(region_masks.shape) == 5:
             region_masks = rearrange(region_masks, "B R T H W -> R T H W B")
 
         output = {
@@ -216,6 +217,6 @@ class VideoExtendGeneralDIT(GeneralDIT):
             "original_shape": original_shape,
             "extra_pos_emb_B_T_H_W_D_or_T_H_W_B_D": extra_pos_emb_B_T_H_W_D_or_T_H_W_B_D,
             "regional_contexts": regional_contexts,
-            "region_masks": region_masks,
+            "region_masks": region_masks
         }
         return output

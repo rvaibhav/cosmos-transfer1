@@ -322,10 +322,12 @@ class VideoAttn(nn.Module):
         T, H, W, B, D = x_T_H_W_B_D.shape
         x_THW_B_D = rearrange(x_T_H_W_B_D, "t h w b d -> (t h w) b d")
         if regional_contexts is not None:
-            regional_contexts = rearrange(regional_contexts, "r (v m) b d -> r m (v b) d", v=self.n_cameras)
+            regional_contexts = rearrange(regional_contexts, "r (v m) b d -> r m (v b) d", v=1)
+            # regional_contexts = rearrange(regional_contexts, "r (v m) b d -> r m (v b) d", v=self.n_cameras)
         if region_masks is not None:
             r, t, h, w, b = region_masks.shape
-            region_masks = rearrange(region_masks, "r (v t) h w b -> r t h w (v b)", v=self.n_cameras)
+            region_masks = rearrange(region_masks, "r (v t) h w b -> r t h w (v b)", v=1)
+            # region_masks = rearrange(region_masks, "r (v t) h w b -> r t h w (v b)", v=self.n_cameras)
         x_THW_B_D = self.attn(
             x_THW_B_D,
             context_M_B_D,

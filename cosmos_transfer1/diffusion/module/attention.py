@@ -19,7 +19,7 @@ import numpy as np
 import torch
 import transformer_engine as te
 from einops import rearrange
-from torch import nn
+from torch import nn, Tensor
 from torch.utils.checkpoint import checkpoint
 from transformer_engine.pytorch.attention import DotProductAttention, apply_rotary_pos_emb
 
@@ -384,8 +384,7 @@ class Attention(nn.Module):
                 num_gqa_groups=self.heads,
                 attention_dropout=0,
                 qkv_format=qkv_format,
-                attn_mask_type="arbitrary",
-                tp_size=self.tp_size
+                attn_mask_type="arbitrary"
             )
         else:
             raise ValueError(f"Backend {backend} not found")
