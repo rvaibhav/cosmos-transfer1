@@ -178,7 +178,6 @@ def prepare_regional_prompts(
         raise ValueError("Global prompt format not recognized.")
 
     regional_contexts = []
-    log.info(f"Regional prompts: {regional_prompts}")
     for regional_prompt in regional_prompts:
         if isinstance(regional_prompt, str):
             raise ValueError(f"Regional prompt should be converted to embedding: {type(regional_prompt)}")

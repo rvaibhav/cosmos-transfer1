@@ -414,8 +414,6 @@ class DiffusionControl2WorldGenerationPipeline(BaseWorldGenerationPipeline):
 
         # Process regional prompts if provided
         regional_embeddings, _ = self._run_text_embedding_on_prompt_with_offload(self.regional_prompts)
-        log.info(f"Regional contexts: {regional_embeddings}")
-        log.info(f"Type of regional_embeddings: {type(regional_embeddings)}")
         regional_contexts = None
         region_masks = None
         if self.regional_prompts and self.region_definitions:
