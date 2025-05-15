@@ -512,13 +512,13 @@ class DiffusionControl2WorldGenerationPipeline(BaseWorldGenerationPipeline):
                     latent_hint.append(self.model.encode_latent(data_batch_p))
             data_batch_i["latent_hint"] = latent_hint = torch.cat(latent_hint)
 
-            # if "regional_contexts" in data_batch_i:
-            #     data_batch_i["regional_contexts"] = broadcast(
-            #         data_batch_i["regional_contexts"], to_tp=True, to_cp=True
-            #     )
-            #     data_batch_i["region_masks"] = broadcast(
-            #         data_batch_i["region_masks"], to_tp=True, to_cp=True
-            #     )
+            if "regional_contexts" in data_batch_i:
+                data_batch_i["regional_contexts"] = broadcast(
+                    data_batch_i["regional_contexts"], to_tp=True, to_cp=True
+                )
+                data_batch_i["region_masks"] = broadcast(
+                    data_batch_i["region_masks"], to_tp=True, to_cp=True
+                )
 
             if isinstance(control_weight, torch.Tensor) and control_weight.ndim > 4:
                 control_weight_t = control_weight[..., start_frame:end_frame, :, :].cuda()

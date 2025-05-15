@@ -201,13 +201,13 @@ class RegionalAttentionOp(BaseAttentionOp):
 
         # Process region masks
         processed_masks = []
-        global_prompt_len = k.shape[1] if is_bshd else k.shape[0]
-        encoder_seq_lens = []
+        prompt_len = k.shape[1] if is_bshd else k.shape[0]
+        num_regions = len(regional_k)
 
         def preprocess_mask(mask: Tensor) -> Tensor:
             mask = mask.permute(3, 0, 1, 2)
             B, T, H, W = mask.shape
-            mask = mask.unsqueeze(1)
+            mask = mask.unsqueeze(1)  # dummy unsqueeze since trilinear interpolation expects 5D
 
             mask_i = [
                 torch.nn.functional.interpolate(
@@ -231,31 +231,30 @@ class RegionalAttentionOp(BaseAttentionOp):
             mask = mask.squeeze(1)
             return (mask > 0.5).float()
 
-        for i in range(len(regional_k)):
+        for i in range(num_regions):
             mask = region_masks[i]
             mask = mask.to(q.device)
             if mask.shape[0] != seq_len:
                 mask = preprocess_mask(mask)
                 mask = rearrange(mask, "b t h w ->  b (t h w)")
             processed_masks.append(mask)
-            encoder_seq_lens.append(regional_k[i].shape[0])
 
-        total_encoder_seq_len = sum(encoder_seq_lens)
         hidden_seq_len = seq_len
         regional_attention_mask = torch.zeros(
-            (batch_size, hidden_seq_len, total_encoder_seq_len), device=q.device, dtype=torch.bool
+            (batch_size, hidden_seq_len, (num_regions + 1) * prompt_len), device=q.device, dtype=torch.bool
         )
         start_idx = 0
         for i, mask in enumerate(processed_masks):
-            end_idx = start_idx + encoder_seq_lens[i]
-            regional_attention_mask[:, :, start_idx:end_idx] = mask.unsqueeze(-1).bool()
-            start_idx = end_idx
+            regional_attention_mask[:, :, (i + 1) * prompt_len : (i + 2) * prompt_len] = mask.unsqueeze(-1).bool()
 
-        combined_k = torch.cat(regional_k, dim=1 if is_bshd else 0)
-        combined_v = torch.cat(regional_v, dim=1 if is_bshd else 0)
+        regional_masks_tensor = torch.stack(processed_masks, dim=-1).bool()  # [B, S, R]
+        global_mask = (regional_masks_tensor.sum(dim=-1) == 0).unsqueeze(-1).bool()  # [B, S, 1]
+        regional_attention_mask[:, :, :prompt_len] = global_mask
+        combined_k = torch.cat([k] + regional_k, dim=0)
+        combined_v = torch.cat([v] + regional_v, dim=0)
 
         attn_bias = torch.zeros_like(regional_attention_mask, dtype=torch.float32)
-        attn_bias = attn_bias.masked_fill(~regional_attention_mask, -1e4)
+        attn_bias = attn_bias.masked_fill(~regional_attention_mask, float("-inf"))
         attn_bias = attn_bias.unsqueeze(1).expand(-1, num_heads, -1, -1)
         output = self.dot_product_attention(
             q,
@@ -266,7 +265,7 @@ class RegionalAttentionOp(BaseAttentionOp):
             core_attention_bias=attn_bias,
         )
 
-        base_ratio = 0.5
+        base_ratio = 0.5  # signifies the weight of the global prompt
         if base_ratio is not None:
             base_output = self.dot_product_attention(
                 q,
@@ -485,8 +484,8 @@ class Attention(nn.Module):
         # Apply regional attention
         combined_attn = self.regional_attn_op(
             q,
-            k,
-            v,
+            k,  # from global prompt
+            v,  # from global prompt
             regional_k=regional_k,
             regional_v=regional_v,
             region_masks=region_masks,

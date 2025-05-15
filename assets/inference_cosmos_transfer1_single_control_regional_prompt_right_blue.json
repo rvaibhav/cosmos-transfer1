@@ -4,7 +4,7 @@
     "num_video_frames": 121,
     "seed": 1,
     "depth": {
-        "input_control": "assets/example3_regional_prompt_depth.mp4",
+        "input_control": "assets/example2_regional_prompt_depth.mp4",
         "control_weight": 1.0
     },
     "regional_prompts": [
