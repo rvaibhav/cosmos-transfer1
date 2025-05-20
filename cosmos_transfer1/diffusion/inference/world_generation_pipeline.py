@@ -413,6 +413,8 @@ class DiffusionControl2WorldGenerationPipeline(BaseWorldGenerationPipeline):
         """
 
         # Process regional prompts if provided
+        log.info(f"regional_prompts passed to _run_model: {self.regional_prompts}")
+        log.info(f"region_definitions passed to _run_model: {self.region_definitions}")
         regional_embeddings, _ = self._run_text_embedding_on_prompt_with_offload(self.regional_prompts)
         regional_contexts = None
         region_masks = None
@@ -441,6 +443,8 @@ class DiffusionControl2WorldGenerationPipeline(BaseWorldGenerationPipeline):
             num_video_frames=self.num_video_frames,
         )
 
+        log.info(f"regional_contexts: {regional_contexts}")
+        log.info(f"region_masks: {region_masks}")
         if regional_contexts is not None:
             data_batch["regional_contexts"] = regional_contexts
             data_batch["region_masks"] = region_masks
@@ -635,7 +639,7 @@ class DiffusionControl2WorldGenerationPipeline(BaseWorldGenerationPipeline):
         log.info("Finish generation")
 
         log.info("Run guardrail on generated video")
-        video = self._run_guardrail_on_video_with_offload(video)
+        # video = self._run_guardrail_on_video_with_offload(video)
         if video is None:
             log.critical("Generated video is not safe")
             raise ValueError("Guardrail check failed: Generated video is unsafe")

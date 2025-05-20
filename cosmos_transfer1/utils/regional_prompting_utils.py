@@ -117,12 +117,27 @@ class RegionalPromptProcessor:
         plt.savefig(save_path)
         plt.close()
 
+def compress_segmentation_map(segmentation_map, compression_factor):
+    # Add batch and channel dimensions [1, 1, T, H, W]
+    expanded_map = segmentation_map.unsqueeze(0).unsqueeze(0)
+    T, H, W = segmentation_map.shape
+    new_H = H // compression_factor
+    new_W = W // compression_factor
+
+    compressed_map = torch.nn.functional.interpolate(
+        expanded_map,
+        size=(T, new_H, new_W),
+        mode='trilinear',
+        align_corners=False
+    )
+
+    return compressed_map.squeeze(0).squeeze(0)
 
 def prepare_regional_prompts(
     model,
     global_prompt: Union[str, torch.Tensor],
     regional_prompts: torch.Tensor,
-    region_definitions: Union[List[List[float]], torch.Tensor],
+    region_definitions: List[Union[List[float], str]],
     batch_size: int,
     time_dim: int,
     height: int,
@@ -157,15 +172,71 @@ def prepare_regional_prompts(
         region_masks: Region masks tensor with values between 0 and 1
     """
     processor = RegionalPromptProcessor(max_img_h=height, max_img_w=width, max_frames=time_dim)
-    if isinstance(region_definitions[0], list):
-        region_masks = processor.create_region_masks_from_boxes(
-            region_definitions, batch_size, time_dim, height, width, device
-        )
-    else:
-        segmentation_maps = [torch.load(path, weights_only=False).to(device) for path in region_definitions]
-        region_masks = processor.create_region_masks_from_segmentation(
-            segmentation_maps, batch_size, time_dim, height, width, device
-        )
+
+    # Validate that we have matching number of prompts and region definitions
+    if len(regional_prompts) != len(region_definitions):
+        raise ValueError(f"Number of regional prompts ({len(regional_prompts)}) must match "
+                         f"total number of region definitions ({len(region_definitions)})")
+
+    # Track which prompts correspond to which region types while maintaining order
+    box_prompts = []
+    seg_prompts = [] 
+    prompt_idx = 0
+
+    segmentation_maps: List[torch.Tensor] = []
+    region_definitions_list: List[List[float]] = []
+    # Maintain correspondence between prompts and region definitions
+    for region_definition in region_definitions:
+        if isinstance(region_definition, str):
+            segmentation_map = torch.load(region_definition, weights_only=False)
+            # Resize segmentation map to match target dimensions
+            # if segmentation_map.shape[1] != height or segmentation_map.shape[2] != width:
+            #     segmentation_map = torch.nn.functional.interpolate(
+            #         segmentation_map.unsqueeze(0),  # Add batch dimension
+            #         size=(height, width),
+            #         mode='nearest'
+            #     ).squeeze(0)  # Remove batch dimension
+            # TODO: remove hardcoding of 8
+            segmentation_map = compress_segmentation_map(segmentation_map, 8)
+            log.info(f"segmentation_map shape: {segmentation_map.shape}")
+            segmentation_maps.append(segmentation_map)
+            seg_prompts.append(regional_prompts[prompt_idx])
+        elif isinstance(region_definition, list):
+            region_definitions_list.append(region_definition)
+            box_prompts.append(regional_prompts[prompt_idx])
+        else:
+            raise ValueError(f"Region definition format not recognized: {type(region_definition)}")
+        prompt_idx += 1
+
+    # Update regional_prompts to maintain correct ordering
+    regional_prompts = box_prompts + seg_prompts
+    # segmentation_maps: List[torch.Tensor] = []
+    # region_definitions_list: List[List[float]] = []
+    # for region_definition in region_definitions:
+    #     if isinstance(region_definition, str):
+    #         segmentation_maps.append(region_definition)
+    #     elif isinstance(region_definition, list):
+    #         region_definitions_list.append(region_definition)
+    #     else:
+    #         raise ValueError(f"Region definition format not recognized: {type(region_definition)}")
+    region_masks_boxes = processor.create_region_masks_from_boxes(
+        region_definitions_list, batch_size, time_dim, height, width, device
+    )
+    region_masks_segmentation = processor.create_region_masks_from_segmentation(
+        segmentation_maps, batch_size, time_dim, height, width, device
+    )
+    region_masks = torch.cat([region_masks_boxes, region_masks_segmentation], dim=1)
+    # if isinstance(region_definitions[0], list):
+    #     log.info(f"Creating region masks from bounding boxes")
+    #     region_masks = processor.create_region_masks_from_boxes(
+    #         region_definitions, batch_size, time_dim, height, width, device
+    #     )
+    # else:
+    #     log.info(f"Creating region masks from segmentation maps")
+    #     segmentation_maps = [region if isinstance(path, str) else pass]
+    #     region_masks = processor.create_region_masks_from_segmentation(
+    #         segmentation_maps, batch_size, time_dim, height, width, device
+    #     )
 
     if visualize_masks and visualization_path:
         processor.visualize_region_masks(region_masks, visualization_path, time_dim, height, width)

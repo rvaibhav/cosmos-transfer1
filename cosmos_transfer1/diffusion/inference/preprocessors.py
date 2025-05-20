@@ -16,6 +16,8 @@
 import json
 import os
 
+import torch
+
 from cosmos_transfer1.auxiliary.depth_anything.model.depth_anything import DepthAnythingModel
 from cosmos_transfer1.auxiliary.human_keypoint.human_keypoint import HumanKeypointModel
 from cosmos_transfer1.auxiliary.sam2.sam2_model import VideoSegmentationModel
@@ -28,10 +30,11 @@ class Preprocessors:
         self.seg_model = None
         self.keypoint_model = None
 
-    def __call__(self, input_video, input_prompt, control_inputs, output_folder):
+    def __call__(self, input_video, input_prompt, control_inputs, output_folder, regional_prompts=None):
+
         for hint_key in control_inputs:
             if hint_key in ["depth", "seg", "keypoint"]:
-                self.gen_input_control(input_video, input_prompt, hint_key, control_inputs[hint_key], output_folder)
+                self.gen_input_control(input_video, input_prompt, hint_key, control_inputs[hint_key], output_folder, regional_prompts)
 
             # for all hints we need to create weight tensor if not present
             control_input = control_inputs[hint_key]
@@ -57,9 +60,27 @@ class Preprocessors:
                     binarize_video=True,
                 )
                 control_input["control_weight"] = out_tensor
+
+            if len(regional_prompts):
+                for i, regional_prompt in enumerate(regional_prompts):
+                    log.info(f"generating regional context for {regional_prompt}")
+                    if "mask_prompt" in regional_prompt:
+                        prompt = regional_prompt["mask_prompt"]
+                        out_tensor = os.path.join(output_folder, f"regional_context_{i}.pt")
+                        out_video = os.path.join(output_folder, f"regional_context_{i}.mp4")
+                        self.segmentation(
+                            in_video=input_video,
+                            out_tensor=out_tensor,
+                            out_video=out_video,
+                            prompt=prompt,
+                            weight_scaler=1.0,
+                            binarize_video=True,
+                        )
+                        if os.path.exists(out_tensor):
+                            regional_prompt["region_definitions_path"] = out_tensor
         return control_inputs
 
-    def gen_input_control(self, in_video, in_prompt, hint_key, control_input, output_folder):
+    def gen_input_control(self, in_video, in_prompt, hint_key, control_input, output_folder, regional_prompts=None):
         # if input control isn't provided we need to run preprocessor to create input control tensor
         # for depth no special params, for SAM we need to run with prompt
         if control_input.get("input_control", None) is None:

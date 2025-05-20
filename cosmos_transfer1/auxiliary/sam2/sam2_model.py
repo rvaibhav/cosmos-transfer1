@@ -363,6 +363,7 @@ class VideoSegmentationModel:
                     if binarize_video:
                         frames = np.any(frames > 0, axis=-1).astype(np.uint8) * 255
                     write_video(frames, output_video, fps)
+                    
                 if output_tensor:
                     generate_tensor_from_images(
                         temp_output_dir, output_tensor, fps, "mask", weight_scaler=weight_scaler

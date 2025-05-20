@@ -190,17 +190,6 @@ def demo(cfg, control_inputs):
     """
 
     control_inputs = validate_controlnet_specs(cfg, control_inputs)
-    region_definitions = None
-    if args.regional_prompts:
-        log.info(f"regional_prompts: {args.regional_prompts}")
-        if args.regional_prompts[0]["region_definitions_path"]:
-            log.info(f"region_definitions_path: {args.regional_prompts[0]['region_definitions_path']}")
-            region_definition_path = args.regional_prompts[0]['region_definitions_path']
-            if region_definition_path.endswith(".json"):
-                with open(region_definition_path, "r") as f:
-                    region_definitions = json.load(f)
-            else:
-                raise ValueError(f"Region definitions file must be JSON")
     misc.set_random_seed(cfg.seed)
 
     device_rank = 0
@@ -238,9 +227,7 @@ def demo(cfg, control_inputs):
         canny_threshold=cfg.canny_threshold,
         upsample_prompt=cfg.upsample_prompt,
         offload_prompt_upsampler=cfg.offload_prompt_upsampler,
-        process_group=process_group,
-        regional_prompts=[cfg.regional_prompts[0]["prompt"]],
-        region_definitions=region_definitions
+        process_group=process_group
     )
 
     if cfg.batch_input_path:
@@ -267,7 +254,35 @@ def demo(cfg, control_inputs):
                     log.warning(f"Ignoring unknown control key in override: {hint_key}")
 
         # if control inputs are not provided, run respective preprocessor (for seg and depth)
-        preprocessors(current_video_path, current_prompt, current_control_inputs, video_save_subfolder)
+        preprocessors(current_video_path, current_prompt, current_control_inputs, video_save_subfolder, args.regional_prompts)
+        log.info(f"regional_prompts after preprocessors: {args.regional_prompts}")
+
+        regional_prompts = []
+        region_definitions = []
+        if len(args.regional_prompts):
+            log.info(f"regional_prompts: {args.regional_prompts}")
+            for regional_prompt in args.regional_prompts:
+                regional_prompts.append(regional_prompt["prompt"])
+                if "region_definitions_path" in regional_prompt:
+                    log.info(f"region_definitions_path: {regional_prompt['region_definitions_path']}")
+                    region_definition_path = regional_prompt['region_definitions_path']
+                    if region_definition_path.endswith(".json"):
+                        with open(region_definition_path, "r") as f:
+                            region_definitions_json = json.load(f)
+                        region_definitions.extend(region_definitions_json)
+                    else:
+                        # region_definition = torch.load(region_definition_path, weights_only=False)
+                        # log.info(f"region_definition: {region_definition}")
+                        # non_zero_indices = torch.nonzero(region_definition)
+                        # log.info(f"non_zero_indices: {len(non_zero_indices)}")
+                        log.info(f"type of region_definition_path: {type(region_definition_path)}")
+                        log.info(f"region_definition_path: {region_definition_path}")
+                        region_definitions.append(region_definition_path)
+
+        if hasattr(pipeline, "regional_prompts"):
+            pipeline.regional_prompts = regional_prompts
+        if hasattr(pipeline, "region_definitions"):
+            pipeline.region_definitions = region_definitions
 
         # Generate video
         generated_output = pipeline.generate(
