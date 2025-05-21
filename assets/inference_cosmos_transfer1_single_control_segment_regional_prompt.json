@@ -6,8 +6,8 @@
     },
     "regional_prompts": [
         {
-            "prompt": "red dress",
-            "mask_prompt": "woman on the right"
+            "prompt": "blue dress",
+            "mask_prompt": "woman . left"
         }
     ]
 }

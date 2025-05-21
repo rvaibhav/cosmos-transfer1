@@ -74,7 +74,7 @@ class Preprocessors:
                             out_video=out_video,
                             prompt=prompt,
                             weight_scaler=1.0,
-                            binarize_video=True,
+                            legacy_mask=True
                         )
                         if os.path.exists(out_tensor):
                             regional_prompt["region_definitions_path"] = out_tensor
@@ -132,6 +132,7 @@ class Preprocessors:
         out_tensor=None,
         weight_scaler=None,
         binarize_video=False,
+        legacy_mask=False
     ):
         if self.seg_model is None:
             self.seg_model = VideoSegmentationModel()
@@ -142,6 +143,7 @@ class Preprocessors:
             prompt=prompt,
             weight_scaler=weight_scaler,
             binarize_video=binarize_video,
+            legacy_mask=legacy_mask
         )
 
 

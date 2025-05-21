@@ -271,12 +271,6 @@ def demo(cfg, control_inputs):
                             region_definitions_json = json.load(f)
                         region_definitions.extend(region_definitions_json)
                     else:
-                        # region_definition = torch.load(region_definition_path, weights_only=False)
-                        # log.info(f"region_definition: {region_definition}")
-                        # non_zero_indices = torch.nonzero(region_definition)
-                        # log.info(f"non_zero_indices: {len(non_zero_indices)}")
-                        log.info(f"type of region_definition_path: {type(region_definition_path)}")
-                        log.info(f"region_definition_path: {region_definition_path}")
                         region_definitions.append(region_definition_path)
 
         if hasattr(pipeline, "regional_prompts"):
