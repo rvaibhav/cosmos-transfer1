@@ -34,7 +34,7 @@ class Preprocessors:
 
         for hint_key in control_inputs:
             if hint_key in ["depth", "seg", "keypoint"]:
-                self.gen_input_control(input_video, input_prompt, hint_key, control_inputs[hint_key], output_folder, regional_prompts)
+                self.gen_input_control(input_video, input_prompt, hint_key, control_inputs[hint_key], output_folder)
 
             # for all hints we need to create weight tensor if not present
             control_input = control_inputs[hint_key]
@@ -80,7 +80,7 @@ class Preprocessors:
                             regional_prompt["region_definitions_path"] = out_tensor
         return control_inputs
 
-    def gen_input_control(self, in_video, in_prompt, hint_key, control_input, output_folder, regional_prompts=None):
+    def gen_input_control(self, in_video, in_prompt, hint_key, control_input, output_folder):
         # if input control isn't provided we need to run preprocessor to create input control tensor
         # for depth no special params, for SAM we need to run with prompt
         if control_input.get("input_control", None) is None:

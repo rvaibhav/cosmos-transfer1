@@ -639,7 +639,7 @@ class DiffusionControl2WorldGenerationPipeline(BaseWorldGenerationPipeline):
         log.info("Finish generation")
 
         log.info("Run guardrail on generated video")
-        # video = self._run_guardrail_on_video_with_offload(video)
+        video = self._run_guardrail_on_video_with_offload(video)
         if video is None:
             log.critical("Generated video is not safe")
             raise ValueError("Guardrail check failed: Generated video is unsafe")

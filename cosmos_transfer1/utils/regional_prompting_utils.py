@@ -189,13 +189,6 @@ def prepare_regional_prompts(
     for region_definition in region_definitions:
         if isinstance(region_definition, str):
             segmentation_map = torch.load(region_definition, weights_only=False)
-            # Resize segmentation map to match target dimensions
-            # if segmentation_map.shape[1] != height or segmentation_map.shape[2] != width:
-            #     segmentation_map = torch.nn.functional.interpolate(
-            #         segmentation_map.unsqueeze(0),  # Add batch dimension
-            #         size=(height, width),
-            #         mode='nearest'
-            #     ).squeeze(0)  # Remove batch dimension
             # TODO: remove hardcoding of 8
             segmentation_map = compress_segmentation_map(segmentation_map, 8)
             log.info(f"segmentation_map shape: {segmentation_map.shape}")
@@ -210,15 +203,6 @@ def prepare_regional_prompts(
 
     # Update regional_prompts to maintain correct ordering
     regional_prompts = box_prompts + seg_prompts
-    # segmentation_maps: List[torch.Tensor] = []
-    # region_definitions_list: List[List[float]] = []
-    # for region_definition in region_definitions:
-    #     if isinstance(region_definition, str):
-    #         segmentation_maps.append(region_definition)
-    #     elif isinstance(region_definition, list):
-    #         region_definitions_list.append(region_definition)
-    #     else:
-    #         raise ValueError(f"Region definition format not recognized: {type(region_definition)}")
     region_masks_boxes = processor.create_region_masks_from_boxes(
         region_definitions_list, batch_size, time_dim, height, width, device
     )
@@ -226,17 +210,6 @@ def prepare_regional_prompts(
         segmentation_maps, batch_size, time_dim, height, width, device
     )
     region_masks = torch.cat([region_masks_boxes, region_masks_segmentation], dim=1)
-    # if isinstance(region_definitions[0], list):
-    #     log.info(f"Creating region masks from bounding boxes")
-    #     region_masks = processor.create_region_masks_from_boxes(
-    #         region_definitions, batch_size, time_dim, height, width, device
-    #     )
-    # else:
-    #     log.info(f"Creating region masks from segmentation maps")
-    #     segmentation_maps = [region if isinstance(path, str) else pass]
-    #     region_masks = processor.create_region_masks_from_segmentation(
-    #         segmentation_maps, batch_size, time_dim, height, width, device
-    #     )
 
     if visualize_masks and visualization_path:
         processor.visualize_region_masks(region_masks, visualization_path, time_dim, height, width)
