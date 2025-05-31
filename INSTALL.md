@@ -8,7 +8,7 @@ git submodule update --init --recursive
 ```
 
 Cosmos runs only on Linux systems. We have tested the installation with Ubuntu 24.04, 22.04, and 20.04.
-Cosmos requires the Python version to be `3.10.x`. 
+Cosmos requires the Python version to be `3.12.x`. 
 
 ### Inference using conda
 
@@ -64,8 +64,8 @@ conda activate cosmos-transfer1
 # Install the dependencies.
 pip install -r requirements.txt
 # Patch Transformer engine linking issues in conda environments.
-ln -sf $CONDA_PREFIX/lib/python3.10/site-packages/nvidia/*/include/* $CONDA_PREFIX/include/
-ln -sf $CONDA_PREFIX/lib/python3.10/site-packages/nvidia/*/include/* $CONDA_PREFIX/include/python3.10
+ln -sf $CONDA_PREFIX/lib/python3.12/site-packages/nvidia/*/include/* $CONDA_PREFIX/include/
+ln -sf $CONDA_PREFIX/lib/python3.12/site-packages/nvidia/*/include/* $CONDA_PREFIX/include/python3.12
 # Install Transformer engine.
 pip install transformer-engine[pytorch]==1.12.0
 # Install Apex for full training with bfloat16.
