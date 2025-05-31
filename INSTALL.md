@@ -8,11 +8,13 @@ git submodule update --init --recursive
 ```
 
 Cosmos runs only on Linux systems. We have tested the installation with Ubuntu 24.04, 22.04, and 20.04.
-Cosmos requires the Python version to be `3.10.x`. Please also make sure you have `conda` installed ([instructions](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)).
+Cosmos requires the Python version to be `3.10.x`. 
 
-### Inference
+### Inference using conda
 
-The below commands creates the `cosmos-transfer1` conda environment and installs the dependencies for inference:
+First, make sure you have `conda` installed ([instructions](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)).
+
+The below commands create the `cosmos-transfer1` conda environment and install the dependencies for inference:
 ```bash
 # Create the cosmos-transfer1 conda environment.
 conda env create --file cosmos-transfer1.yaml
@@ -31,7 +33,11 @@ ln -sf $CONDA_PREFIX/lib/python3.12/site-packages/nvidia/*/include/* $CONDA_PREF
 pip install transformer-engine[pytorch]
 ```
 
-* Alternatively, if you are more familiar with a containerized environment, you can build the dockerfile and run it to get an environment with all the packages pre-installed.
+Note: you will need to define the `CUDA_HOME=$CONDA_PREFIX` environment variable before using any of the Transfer1 scripts.
+
+### Inference using docker
+
+Alternatively, if you are more familiar with a containerized environment, you can build the dockerfile and run it to get an environment with all the packages pre-installed.
     This requires docker to be already present on your system with the [Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed.
 
     conda is not needed for docker environment!
