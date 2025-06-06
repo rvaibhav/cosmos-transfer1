@@ -268,6 +268,7 @@ def demo(cfg, control_inputs):
                         log.warning(f"Ignoring unknown control key in override: {hint_key}")
 
             # if control inputs are not provided, run respective preprocessor (for seg and depth)
+            log.info("running preprocessor")
             preprocessors(current_video_path, current_prompt, current_control_inputs, video_save_subfolder)
             if hasattr(cfg, "regional_prompts") and cfg.regional_prompts:
                 log.info(f"regional_prompts after preprocessors: {cfg.regional_prompts}")

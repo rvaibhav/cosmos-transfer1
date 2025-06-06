@@ -62,6 +62,7 @@ class Preprocessors:
                     )
                     control_input["control_weight"] = out_tensor
                 if regional_prompts and len(regional_prompts):
+                    log.info(f"processing regional prompts: {regional_prompts}")
                     for i, regional_prompt in enumerate(regional_prompts):
                         log.info(f"generating regional context for {regional_prompt}")
                         out_tensor = os.path.join(output_folder, f"regional_context_{i}.pt")
@@ -79,11 +80,15 @@ class Preprocessors:
                             if os.path.exists(out_tensor):
                                 regional_prompt["region_definitions_path"] = out_tensor
                         elif "region_definitions_path" in regional_prompt and isinstance(regional_prompt['region_definitions_path'], str):
+                            log.info(f"region_definitions_path is a string: {regional_prompt['region_definitions_path']}")
                             if is_valid_video(regional_prompt['region_definitions_path']):
+                                log.info(f"region_definitions_path is a valid video: {regional_prompt['region_definitions_path']}")
                                 log.info(f"converting video to tensor: {regional_prompt['region_definitions_path']}")
                                 video_to_tensor(regional_prompt['region_definitions_path'], out_tensor)
                             else:
                                 raise ValueError(f"Invalid video file: {regional_prompt['region_definitions_path']}")
+                        else:
+                            log.info("do nothing!")
 
         return control_inputs
 
