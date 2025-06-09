@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import magic
 from typing import Tuple
+from cosmos_transfer1.utils import log
 
 # Supported video extensions and corresponding MIME types
 SUPPORTED_VIDEO_TYPES = {
@@ -62,10 +63,13 @@ def video_to_tensor(video_path: str, output_path: str, normalize: bool = True) -
 
     cap.release()
 
+
+    log.info(f"frames: {len(frames)}")
     # Convert frames to tensor
     video_tensor = torch.from_numpy(np.array(frames))
-    # Reshape from [T,H,W,C] to [C,T,H,W]
-    video_tensor = video_tensor.permute(3, 0, 1, 2)
+    log.info(f"video_tensor shape: {video_tensor.shape}")
+    # Reshape from [T,H,W,C] to [T,C,H,W]
+    video_tensor = video_tensor.permute(0, 3, 1, 2)
 
     # Normalize if requested
     if normalize:

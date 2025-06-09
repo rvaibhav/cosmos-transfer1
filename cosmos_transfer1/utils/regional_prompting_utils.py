@@ -122,6 +122,13 @@ class RegionalPromptProcessor:
 
 
 def compress_segmentation_map(segmentation_map, compression_factor):
+    # Handle both [T,H,W] and [C,T,H,W] formats
+    if len(segmentation_map.shape) == 4:  # [C,T,H,W] format
+        C, T, H, W = segmentation_map.shape
+        # Assuming first channel contains the main segmentation mask
+        # Can be modified based on specific requirements
+        segmentation_map = segmentation_map[0]  # Take first channel, now [T,H,W]
+    
     # Add batch and channel dimensions [1, 1, T, H, W]
     expanded_map = segmentation_map.unsqueeze(0).unsqueeze(0)
     T, H, W = segmentation_map.shape
@@ -194,7 +201,10 @@ def prepare_regional_prompts(
     for region_definition in region_definitions:
         if isinstance(region_definition, str):
             segmentation_map = torch.load(region_definition, weights_only=False)
-            # TODO: remove hardcoding of 8
+            # Validate segmentation map dimensions
+            if len(segmentation_map.shape) not in [3, 4]:
+                raise ValueError(f"Segmentation map should have shape [T,H,W] or [C,T,H,W], got shape {segmentation_map.shape}")
+
             segmentation_map = compress_segmentation_map(segmentation_map, compression_factor)
             log.info(f"segmentation_map shape: {segmentation_map.shape}")
             segmentation_maps.append(segmentation_map)
