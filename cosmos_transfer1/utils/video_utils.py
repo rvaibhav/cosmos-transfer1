@@ -62,14 +62,15 @@ def video_to_tensor(video_path: str, output_path: str, normalize: bool = True) -
         frames.append(frame)
 
     cap.release()
-
+    
+    
 
     log.info(f"frames: {len(frames)}")
     # Convert frames to tensor
     video_tensor = torch.from_numpy(np.array(frames))
     log.info(f"video_tensor shape: {video_tensor.shape}")
-    # Reshape from [T,H,W,C] to [T,C,H,W]
-    video_tensor = video_tensor.permute(0, 3, 1, 2)
+    # Reshape from [T,H,W,C] to [C,T,H,W]
+    video_tensor = video_tensor.permute(3, 0, 1, 2)
 
     # Normalize if requested
     if normalize:

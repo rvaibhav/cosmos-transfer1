@@ -88,6 +88,10 @@ class RegionalPromptProcessor:
         )
 
         for r, seg_map in enumerate(segmentation_maps):
+            # Clip to 121 frames if longer
+            if seg_map.shape[0] > time_dim:
+                log.info(f"clipping segmentation map to {time_dim} frames")
+                seg_map = seg_map[:time_dim]
             region_masks[:, r] = seg_map.float()
 
         return region_masks
@@ -128,7 +132,7 @@ def compress_segmentation_map(segmentation_map, compression_factor):
         # Assuming first channel contains the main segmentation mask
         # Can be modified based on specific requirements
         segmentation_map = segmentation_map[0]  # Take first channel, now [T,H,W]
-    
+
     # Add batch and channel dimensions [1, 1, T, H, W]
     expanded_map = segmentation_map.unsqueeze(0).unsqueeze(0)
     T, H, W = segmentation_map.shape
